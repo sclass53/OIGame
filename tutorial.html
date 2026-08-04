@@ -1,0 +1,2787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>树形探索推理 · 教程</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --surface: #fff;
+            --text: #222;
+            --text-secondary: #555;
+            --accent: #444;
+            --correct: #555;
+            --incorrect: #888;
+            --time-fill: #666;
+            --time-danger: #333;
+            --stamina-fill: #999;
+            --border: #ccc;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --skill-border: #aaa;
+            --btn-restart-bg: #444;
+            --btn-restart-hover: #333;
+            --btn-complete-bg: #555;
+            --btn-complete-border: #3a3a3a;
+            --btn-complete-hover: #444;
+            --dig-cell-bg: #e8e8e8;
+            --dig-cell-revealed: #fafafa;
+            --dig-time-extend: #5b9bd5;
+            --dig-time-extend-light: #d6e8f7;
+            --dig-rare-boost: #9b59b6;
+            --dig-rare-boost-light: #ecdff2;
+            --dig-fail-safe: #e6a817;
+            --dig-fail-safe-light: #fff8e1;
+            --dig-mind-box: #e8943a;
+            --dig-time-box: #5b9bd5;
+            --dig-inspire: #d4a017;
+            --dig-inspire-light: #fef9e7;
+            --guide-bg: #fffef5;
+            --guide-border: #e6a817;
+            --guide-highlight: #ff9800;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            max-width: 1100px;
+            width: 100%;
+        }
+        .game-container {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 10px 18px 14px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .level-banner {
+            background: linear-gradient(135deg, #3a3a3a, #555);
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 0 0 16px 16px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 3px 16px rgba(0, 0, 0, 0.25);
+            z-index: 10;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .level-banner.sim {
+            background: linear-gradient(135deg, #5a5a5a, #777);
+        }
+        .tutorial-badge {
+            background: #ff9800;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            animation: pulseBadge 1.5s infinite alternate;
+        }
+        @keyframes pulseBadge {
+            from {
+                box-shadow: 0 0 6px rgba(255, 152, 0, 0.4);
+            }
+            to {
+                box-shadow: 0 0 16px rgba(255, 152, 0, 0.8);
+            }
+        }
+        .attrs-panel {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 6px 10px;
+            background: #fafafa;
+            border-radius: 14px;
+            border: 1px solid #e0e0e0;
+        }
+        .attr-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: #fff;
+            border-radius: 20px;
+            border: 1.5px solid #d5d5d5;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #444;
+            white-space: nowrap;
+        }
+        .attr-value {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #333;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .attr-value.high {
+            background: #d0d0d0;
+            color: #111;
+        }
+        .attr-value.low {
+            background: #f0f0f0;
+            color: #888;
+        }
+        .score-progress-panel {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 14px;
+            background: #fafafa;
+            border-radius: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .score-progress-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #444;
+            white-space: nowrap;
+            min-width: 40px;
+        }
+        .score-bar-outer {
+            flex: 1;
+            height: 12px;
+            background: #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .score-bar-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.4s, background-color 0.5s;
+            background: #1a1a1a;
+        }
+        .score-number {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #333;
+            min-width: 60px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .time-panel {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 14px;
+            background: #fafafa;
+            border-radius: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .time-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #444;
+            white-space: nowrap;
+        }
+        .time-bar-outer {
+            flex: 1;
+            height: 16px;
+            background: #e8e8e8;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .stamina-bar,
+        .time-bar-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.35s;
+        }
+        .time-bar-inner {
+            background: var(--time-fill);
+        }
+        .stamina-bar {
+            background: var(--stamina-fill);
+        }
+        .time-number {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #222;
+            min-width: 40px;
+            text-align: center;
+        }
+        .canvas-wrapper {
+            background: #fcfcfc;
+            border-radius: 14px;
+            border: 2px solid #ddd;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        .info-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #777;
+        }
+        .legend {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.73rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1.5px solid #999;
+            background: #d0d0d0;
+        }
+        .legend-dot.important {
+            background: #666;
+            border-color: #444;
+        }
+        .legend-dot.result {
+            background: #888;
+            border-radius: 2px;
+            border-color: #666;
+        }
+        .legend-dot.skill-node {
+            background: #ccc;
+            border-radius: 1px;
+            border: 2px solid #999;
+            transform: rotate(45deg);
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+        }
+        .legend-dot.check-ring {
+            background: transparent;
+            border-radius: 50%;
+            border: 3px solid #444;
+            width: 10px;
+            height: 10px;
+        }
+        .legend-dot.correct-box {
+            background: #555;
+            border-radius: 2px;
+            border: 2px solid #bbb;
+            width: 10px;
+            height: 10px;
+        }
+        .btn {
+            padding: 10px 22px;
+            border-radius: 25px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: 0.2s;
+        }
+        .btn-restart {
+            background: var(--btn-restart-bg);
+            color: #fff;
+        }
+        .btn-restart:hover {
+            background: var(--btn-restart-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .btn-continue {
+            background: #444;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 25px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-continue:hover {
+            background: #333;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.hidden {
+            display: none;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 680px;
+            width: 90%;
+            border: 1px solid #ddd;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal h2 {
+            font-size: 1.7rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .tutorial-guide-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--guide-bg);
+            border: 3px solid var(--guide-border);
+            border-radius: 16px;
+            padding: 16px 22px;
+            z-index: 90;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: slideUp 0.4s ease-out;
+            pointer-events: auto;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        .tutorial-guide-panel .guide-step {
+            font-size: 0.7rem;
+            color: #e6a817;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .tutorial-guide-panel .guide-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
+            margin: 6px 0;
+            line-height: 1.5;
+        }
+        .tutorial-guide-panel .guide-hint {
+            font-size: 0.73rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .dig-grid-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
+            width: 100%;
+            max-width: 500px;
+            height: 500px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f0f0f0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .dig-viewport {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+            will-change: transform;
+        }
+        .dig-viewport.dragging {
+            cursor: grabbing;
+        }
+        .dig-grid {
+            position: absolute;
+            display: grid;
+            gap: 0;
+            transform: translate(0, 0);
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+        .dig-cell {
+            width: 50px;
+            height: 50px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.15s;
+            position: relative;
+            border: 1px solid transparent;
+            text-align: center;
+            line-height: 1;
+            word-break: break-all;
+            box-sizing: border-box;
+        }
+        .dig-cell.unrevealed {
+            background: var(--dig-cell-bg);
+            border-color: #c5c5c5;
+            color: #888;
+        }
+        .dig-cell.revealed {
+            background: var(--dig-cell-revealed);
+            border-color: #d5d5d5;
+            cursor: default;
+            color: #444;
+            font-size: 0.55rem;
+        }
+        .dig-cell.revealed.reward-mind {
+            background: #fff3e0;
+            border: 3px solid var(--dig-mind-box);
+            color: #8b5e2f;
+            border-radius: 4px;
+        }
+        .dig-cell.revealed.reward-sp1 {
+            background: #e8f5e9;
+            border-color: #5a9a4b;
+            color: #3d6b30;
+        }
+        .dig-cell.revealed.reward-sp2 {
+            background: #c8e6c9;
+            border-color: #388e3c;
+            color: #1b5e20;
+        }
+        .dig-cell.revealed.reward-empty {
+            background: #fafafa;
+            border-color: #ddd;
+            color: #ccc;
+        }
+        .dig-cell.revealed.reward-time-extend {
+            background: #e8f2fa;
+            border: 3px solid var(--dig-time-box);
+            color: #2b5f8a;
+            border-radius: 4px;
+        }
+        .dig-cell.revealed.reward-rare-boost {
+            background: #f3eaf7;
+            border-color: #9b59b6;
+            color: #5b2d6e;
+        }
+        .dig-cell.revealed.reward-fail-safe {
+            background: #fffcf0;
+            border-color: #e6a817;
+            color: #8a6d14;
+        }
+        .dig-cell.revealed.reward-inspire {
+            background: var(--dig-inspire-light);
+            border: 3px solid var(--dig-inspire);
+            color: #6d5800;
+            border-radius: 4px;
+        }
+        .dig-cell.revealed.reward-mind-box {
+            background: #fff3e0;
+            border: 3px solid #e8943a;
+            color: #8b5e2f;
+            border-radius: 4px;
+        }
+        .dig-legend {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: #666;
+            margin: 4px 0;
+        }
+        .dig-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .dig-legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1.5px solid #bbb;
+        }
+        .dig-legend-swatch.te {
+            background: #e8f2fa;
+            border: 3px solid #5b9bd5;
+        }
+        .dig-legend-swatch.mb {
+            background: #fff3e0;
+            border: 3px solid #e8943a;
+        }
+        .dig-legend-swatch.rb {
+            background: #f3eaf7;
+            border-color: #9b59b6;
+            border-width: 2px;
+        }
+        .dig-legend-swatch.fs {
+            background: #fffcf0;
+            border-color: #e6a817;
+            border-width: 2px;
+        }
+        .dig-legend-swatch.insp {
+            background: #fef9e7;
+            border: 3px solid #d4a017;
+        }
+        .dig-legend-swatch.normal {
+            background: #e8e8e8;
+            border-color: #c5c5c5;
+        }
+        .dig-message {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 8px 14px;
+            border-radius: 8px;
+            min-height: 10px;
+            transition: 0.3s;
+            margin: 4px 0;
+            color: #555;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            z-index: 5;
+            position: relative;
+        }
+        .dig-message.success {
+            color: #3d6b30;
+            background: #e8f5e9;
+            border-color: #5a9a4b;
+        }
+        .dig-message.info {
+            color: #2b5f8a;
+            background: #e8f2fa;
+            border-color: #5b9bd5;
+        }
+        .dig-message.warning {
+            color: #8a6d14;
+            background: #fffcf0;
+            border-color: #e6a817;
+        }
+        .active-skills-bar {
+            width: 100%;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            color: #777;
+            min-height: 20px;
+        }
+        .active-skill-tag {
+            background: #e8e8e8;
+            color: #444;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.68rem;
+            white-space: nowrap;
+        }
+        .node-highlight-glow {
+            animation: nodeGlowPulse 0.8s infinite alternate;
+        }
+        @keyframes nodeGlowPulse {
+            from {
+                filter: drop-shadow(0 0 4px rgba(255, 152, 0, 0.6));
+            }
+            to {
+                filter: drop-shadow(0 0 14px rgba(255, 152, 0, 1));
+            }
+        }
+        .map-selector {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-btn {
+            background: #f5f5f5;
+            border: 2px solid #d5d5d5;
+            color: #666;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-weight: 600;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .map-btn.active {
+            background: #444;
+            border-color: #333;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+        }
+        .map-btn.win {
+            background: #e8e8e8;
+            border-color: #999;
+            color: #333;
+        }
+        .map-btn.lose {
+            background: #f5f5f5;
+            border-color: #ccc;
+            color: #888;
+        }
+        .global-message {
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-align: center;
+            min-height: 20px;
+            transition: 0.3s;
+            color: #555;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+        }
+        .global-message.success {
+            color: #3d6b30;
+            background: #e8f5e9;
+            border-color: #5a9a4b;
+        }
+        .global-message.info {
+            color: #2b5f8a;
+            background: #e8f2fa;
+            border-color: #5b9bd5;
+        }
+        .global-message.warning {
+            color: #8a6d14;
+            background: #fffcf0;
+            border-color: #e6a817;
+        }
+        .global-message.blocked {
+            color: #a04020;
+            background: #fef0e8;
+            border-color: #e8943a;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="game-container">
+            <div class="level-banner sim" id="levelBanner">
+                📖 <span id="levelName">教程</span>
+                <span class="tutorial-badge" id="tutorialBadge">🎓 学习中</span>
+                <span>💪精力:<span id="staminaDisplay">30</span></span>
+            </div>
+            <div class="global-message" id="globalMessage"></div>
+            <div class="attrs-panel">
+                <div class="attr-item"><span>🧠 思维</span><span class="attr-value" id="mindValue">4</span></div>
+            </div>
+            <div class="active-skills-bar" id="activeSkillsBar"></div>
+            <div class="score-progress-panel">
+                <span class="score-progress-label">📊 总分</span>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner" id="scoreBarInner"></div>
+                </div>
+                <span class="score-number" id="scoreNumber">0 / 100</span>
+            </div>
+            <div class="time-panel">
+                <span>⏱️</span>
+                <span class="time-label">时间 / 精力</span>
+                <div class="time-bar-outer">
+                    <div class="stamina-bar" id="staminaBar"></div>
+                    <div class="time-bar-inner" id="timeBarInner"></div>
+                </div>
+                <span class="time-number" id="timeNumber">20</span>
+                <span style="font-size:0.7rem;color:#888;">/ 精力<span id="staminaRef">30</span></span>
+            </div>
+            <div class="map-selector" id="mapSelector"></div>
+            <div class="canvas-wrapper"><canvas id="treeCanvas"></canvas></div>
+            <div class="info-bar">
+                <div class="legend">
+                    <span class="legend-item"><span class="legend-dot"></span> 过程</span>
+                    <span class="legend-item"><span class="legend-dot important"></span> 检查节点</span>
+                    <span class="legend-item"><span class="legend-dot result"></span> 结果(方)</span>
+                    <span class="legend-item"><span class="legend-dot skill-node"></span> 特殊奖励</span>
+                    <span class="legend-item"><span class="legend-dot check-ring"></span> 可检查</span>
+                    <span class="legend-item"><span class="legend-dot correct-box"></span> 正确路径虚线框</span>
+                </div>
+                <span id="correctFoundHint" style="display:none;background:#e0e0e0;color:#222;padding:4px 10px;border-radius:12px;font-weight:600;font-size:0.75rem;">✅正确路径已找到！</span>
+            </div>
+            <button class="btn btn-restart" id="btnRestart">🔄 重新开始教程</button>
+        </div>
+    </div>
+
+    <div class="tutorial-guide-panel hidden" id="tutorialGuidePanel">
+        <div class="guide-step" id="guideStepLabel">步骤 1/7</div>
+        <div class="guide-text" id="guideText"></div>
+        <div class="guide-hint" id="guideHint"></div>
+    </div>
+
+    <div class="overlay hidden" id="gameOverOverlay">
+        <div class="modal" id="gameOverModal">
+            <h2 id="modalTitle"></h2>
+            <p id="modalText"></p>
+            <div id="modalButtons" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-restart" id="btnModalRestart">🔄 重新开始教程</button>
+                <button class="btn-continue hidden" id="btnModalContinue">▶ 进入CSP-S模拟赛练习</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay hidden" id="skillUpgradeOverlay">
+        <div class="modal" id="digModal">
+            <h2>⛏️ 平面挖掘探索</h2>
+            <p style="font-weight:700;">💡 技能点：<span id="digSkillPoints">0</span></p>
+            <p style="font-weight:700;">🧠 当前思维：<span id="digMindDisplay">4</span></p>
+            <p id="digBonusInfo" style="font-size:0.75rem;color:#666;"></p>
+            <div class="dig-message" id="digMessage"></div>
+            <div class="dig-grid-container">
+                <div class="dig-viewport" id="digViewport">
+                    <div class="dig-grid" id="digGrid"></div>
+                </div>
+            </div>
+            <div class="dig-legend">
+                <span class="dig-legend-item"><span class="dig-legend-swatch te"></span> 时间扩展 (⏰+3)</span>
+                <span class="dig-legend-item"><span class="dig-legend-swatch mb"></span> 思维块 (🧠+1)</span>
+                <span class="dig-legend-item"><span class="dig-legend-swatch rb"></span> 稀有提升 (💠+0.5)</span>
+                <span class="dig-legend-item"><span class="dig-legend-swatch fs"></span> 失败保护 (🛡️)</span>
+                <span class="dig-legend-item"><span class="dig-legend-swatch insp"></span> 振奋 (⚡+1)</span>
+                <span class="dig-legend-item"><span class="dig-legend-swatch normal"></span> 普通块</span>
+            </div>
+            <p style="font-size:0.7rem;color:#888;">消耗1技能点挖掘一个方块 | 只能挖掘已探索方块相邻的格子</p>
+            <p style="font-size:0.7rem;color:#999;" id="digRemainingHint"></p>
+            <button class="btn-continue" id="btnCloseDig">▶ 完成挖掘，开始练习赛</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const LOGICAL_WIDTH = 1200;
+            const LOGICAL_HEIGHT = 700;
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = LOGICAL_WIDTH;
+            canvas.height = LOGICAL_HEIGHT;
+
+            const DIG_ROWS = 20;
+            const DIG_COLS = 20;
+            const INITIAL_MIND = 4;
+
+            let skillPoints = 0;
+            let globalMind = INITIAL_MIND;
+            let maps = [];
+            let activeMapIndex = 0;
+            let globalRemainingTime = 20;
+            let globalRemainingStamina = 30;
+            let globalMaxStaminaActual = 30;
+            let gameStarted = false;
+            let totalHistoricalScore = 0;
+            let timeBonusPerMap = 0;
+            let rareNodeBonus = 0;
+            let rewardMultiplier = 1;
+            let failSafeAvailable = false;
+            let failSafeUsed = false;
+            let inspireStructuresRevealed = 0;
+            let settlementInProgress = false;
+
+            let digGridCells = null;
+            let digGridRevealed = null;
+            let digCellStructureMap = null;
+            let digStructureGroups = [];
+            let digDragStart = null;
+            let digViewportTransform = { x: 0, y: 0 };
+
+            let tutorialStep = 1;
+            let tutorialActive = true;
+            let tutorialPhase = 'map';
+            let tutorialDigStructRevealed = false;
+            let tutorialPlayerChoseA = null;
+            let tutorialStep5Triggered = false;
+            let tutorialDigOtherStructRevealed = {}; // 跟踪教程挖掘场中揭示的其他结构
+
+            const gameOverOverlay = document.getElementById('gameOverOverlay');
+            const skillUpgradeOverlay = document.getElementById('skillUpgradeOverlay');
+            const tutorialGuidePanel = document.getElementById('tutorialGuidePanel');
+
+            function randomInt(min, max) {
+                if (min > max) return min;
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            function seededRandom(seed) {
+                let s = seed;
+                return function() {
+                    s = (s * 16807 + 0) % 2147483647;
+                    return (s - 1) / 2147483646;
+                };
+            }
+
+            function getNodeSeed(nodeId) {
+                let hash = 0;
+                for (let i = 0; i < nodeId.length; i++) {
+                    hash = ((hash << 5) - hash) + nodeId.charCodeAt(i);
+                    hash |= 0;
+                }
+                return Math.abs(hash);
+            }
+
+            function formatSkillPoints(sp) {
+                if (Number.isInteger(sp)) return sp.toString();
+                return sp.toFixed(1);
+            }
+
+            function setGlobalMessage(msg, type) {
+                const el = document.getElementById('globalMessage');
+                if (!el) return;
+                el.textContent = msg;
+                el.className = 'global-message';
+                if (type && ['warning', 'success', 'info', 'blocked'].includes(type)) el.classList.add(type);
+                if (msg) {
+                    clearTimeout(el._timeout);
+                    el._timeout = setTimeout(() => {
+                        el.textContent = '';
+                        el.className = 'global-message';
+                    }, 6000);
+                }
+            }
+
+            function setDigMessage(msg, type, durationMs) {
+                const el = document.getElementById('digMessage');
+                if (!el) return;
+                el.textContent = msg;
+                el.className = 'dig-message';
+                if (type && ['warning', 'success', 'info'].includes(type)) el.classList.add(type);
+                if (msg) {
+                    clearTimeout(el._timeout);
+                    const dur = durationMs || 5000;
+                    el._timeout = setTimeout(() => {
+                        el.textContent = '';
+                        el.className = 'dig-message';
+                    }, dur);
+                }
+            }
+
+            function updateTutorialGuide(step, text, hint) {
+                const panel = tutorialGuidePanel;
+                if (!panel) return;
+                if (step === null) {
+                    panel.classList.add('hidden');
+                    return;
+                }
+                panel.classList.remove('hidden');
+                document.getElementById('guideStepLabel').textContent = '步骤 ' + step + '/7';
+                document.getElementById('guideText').textContent = text;
+                document.getElementById('guideHint').textContent = hint || '';
+            }
+
+            function getTutorialHighlightNodeId() {
+                if (!tutorialActive || tutorialPhase !== 'map') return null;
+                switch (tutorialStep) {
+                    case 1:
+                        return 'R';
+                    case 2:
+                        return 'A';
+                    case 3:
+                        return tutorialPlayerChoseA ? 'A' : 'B';
+                    case 4:
+                        return null;
+                    case 5:
+                        return tutorialPlayerChoseA ? 'B' : 'A';
+                    case 6:
+                        return 'B1';
+                    default:
+                        return null;
+                }
+            }
+
+            function updateActiveSkillsBar() {
+                const bar = document.getElementById('activeSkillsBar');
+                if (bar) {
+                    let parts = [];
+                    parts.push('<span class="active-skill-tag">💎技能点: ' + formatSkillPoints(skillPoints) + '</span>');
+                    parts.push('<span class="active-skill-tag">🧠思维: ' + globalMind + '</span>');
+                    if (timeBonusPerMap > 0) parts.push('<span class="active-skill-tag">⏰+' + timeBonusPerMap +
+                        '</span>');
+                    if (rareNodeBonus > 0) parts.push('<span class="active-skill-tag">💠+' + rareNodeBonus.toFixed(1) +
+                        '</span>');
+                    if (rewardMultiplier > 1) parts.push('<span class="active-skill-tag">🔷×' + rewardMultiplier.toFixed(
+                        1) + '</span>');
+                    if (inspireStructuresRevealed > 0) parts.push('<span class="active-skill-tag">⚡振奋×' +
+                        inspireStructuresRevealed + '</span>');
+                    if (failSafeAvailable && !failSafeUsed) parts.push(
+                        '<span class="active-skill-tag">🛡️失败保护可用</span>');
+                    bar.innerHTML = parts.join(' ');
+                }
+            }
+
+            function updateMindDisplay() {
+                const mindEl = document.getElementById('mindValue');
+                if (mindEl) {
+                    mindEl.textContent = globalMind;
+                    mindEl.classList.toggle('high', globalMind > 6);
+                    mindEl.classList.toggle('low', globalMind < 3);
+                }
+                const digMindEl = document.getElementById('digMindDisplay');
+                if (digMindEl) digMindEl.textContent = globalMind;
+            }
+
+            function updateScoreProgress() {
+                const scoreBarInner = document.getElementById('scoreBarInner');
+                const scoreNumber = document.getElementById('scoreNumber');
+                if (!scoreBarInner || !scoreNumber) return;
+                if (!maps || maps.length === 0) {
+                    scoreBarInner.style.width = '0%';
+                    scoreBarInner.style.backgroundColor = '#1a1a1a';
+                    scoreNumber.textContent = '0 / 100';
+                    return;
+                }
+                const totalScore = maps.reduce((s, m) => s + (m.maxResultScore || 0), 0);
+                const maxPossible = maps.length * 100;
+                const ratio = maxPossible > 0 ? Math.min(1, totalScore / maxPossible) : 0;
+                const lightness = 10 + ratio * 82;
+                const fillColor = `hsl(0, 0%, ${lightness}%)`;
+                scoreBarInner.style.width = (ratio * 100) + '%';
+                scoreBarInner.style.backgroundColor = fillColor;
+                scoreNumber.textContent = totalScore + ' / ' + maxPossible;
+            }
+
+            function getActiveMap() {
+                if (!maps || maps.length === 0) return null;
+                if (activeMapIndex < 0 || activeMapIndex >= maps.length) return null;
+                return maps[activeMapIndex];
+            }
+
+            function staminaCostForNode(node) {
+                if (!node) return 1;
+                return Math.max(1, (node.reqValue || 0) - globalMind);
+            }
+
+            function canUnlock(node, map) {
+                if (!node || !map) return false;
+                if (node.state !== 'visible_locked' || map.gameOver || globalRemainingTime <= 0 || globalRemainingStamina <=
+                    0) return false;
+                if (node === map.root) return true;
+                const parent = node.parent;
+                if (!parent) return false;
+                if (parent.state !== 'unlocked' && parent.state !== 'correct' && parent.state !== 'incorrect') return false;
+                // 限制：如果父节点是important类型且状态为unlocked（已解锁但未检查），禁止解锁子节点
+                if (parent.type === 'important' && parent.state === 'unlocked') {
+                    setGlobalMessage('⚠️ 请先检查节点 "' + parent.name + '"（点击其外圈圆环），然后才能解锁它的子节点。', 'blocked');
+                    return false;
+                }
+                return true;
+            }
+
+            function canCheck(node, map) {
+                if (!node || !map) return false;
+                if (node.state !== 'unlocked' || map.gameOver || globalRemainingTime <= 0 || globalRemainingStamina <= 0)
+                    return false;
+                if (node.type === 'important' || node.type === 'result' || node.type === 'skill') return true;
+                return false;
+            }
+
+            function computeMaxScore(map) {
+                if (!map || !map.nodeMap) return 0;
+                let max = 0;
+                Object.values(map.nodeMap).filter(n => n.type === 'result' || n.type === 'skill').forEach(r => {
+                    if ((r.state === 'correct' || r.state === 'incorrect') && r.score !== null && r.score > max)
+                        max = r.score;
+                });
+                if (max === 0 && map.gameResult === 'win' && map.correctResult && map.correctResult.score != null) max = map
+                    .correctResult.score;
+                return max;
+            }
+
+            function markCorrect(n) {
+                if (!n) return;
+                if (n.state !== 'correct') {
+                    if (n.type === 'skill') {
+                        const spGain = 1 + (rareNodeBonus || 0);
+                        skillPoints += spGain;
+                        updateActiveSkillsBar();
+                    }
+                    n.state = 'correct';
+                }
+            }
+
+            function markIncorrect(n) {
+                if (!n) return;
+                if (n.state === 'incorrect' || n.state === 'correct') return;
+                n.state = 'incorrect';
+                if (n.children && n.children.length > 0) {
+                    n.children.forEach(c => markIncorrect(c));
+                }
+            }
+
+            function checkFork(fork) {
+                if (!fork || !fork.isFork || fork.state === 'incorrect' || fork.state === 'correct') return;
+                if (fork.children && fork.children.every(c => c.state === 'incorrect')) {
+                    markIncorrect(fork);
+                    if (fork.parent && fork.parent.isFork) checkFork(fork.parent);
+                }
+            }
+
+            function getMaxSubResult(node) {
+                if (!node) return 0;
+                if (node.type === 'result' || node.type === 'skill') return node.score || 0;
+                let max = 0;
+
+                function dfs(n) {
+                    if (!n) return;
+                    if ((n.type === 'result' || n.type === 'skill') && n.score > max) max = n.score;
+                    if (n.children) n.children.forEach(dfs);
+                }
+                dfs(node);
+                return max;
+            }
+
+            function unlockNode(node, map) {
+                if (!canUnlock(node, map)) return false;
+                globalRemainingTime = Math.max(0, globalRemainingTime - 1);
+                const staminaCost = staminaCostForNode(node);
+                globalRemainingStamina = Math.max(0, globalRemainingStamina - staminaCost);
+                map.totalUnlocked = (map.totalUnlocked || 0) + 1;
+                node.state = 'unlocked';
+                if (node.children) {
+                    node.children.forEach(c => {
+                        if (c.state === 'hidden') c.state = 'visible_locked';
+                    });
+                }
+                if (node === map.correctResult && node.type === 'skill') {
+                    const spGain = 1 + (rareNodeBonus || 0);
+                    skillPoints += spGain;
+                    updateActiveSkillsBar();
+                }
+                if (globalRemainingTime <= 0 || globalRemainingStamina <= 0) {
+                    maps.forEach(m => {
+                        if (!m.gameOver) {
+                            if (m.correctResult && m.correctResult.state === 'correct') endMapGame(m, 'win');
+                            else endMapGame(m, 'lose');
+                        }
+                    });
+                    refreshUIForActiveMap();
+                    checkAllMapsComplete();
+                    return true;
+                }
+                checkTutorialProgressAfterAction(node, 'unlock');
+                refreshUIForActiveMap();
+                return true;
+            }
+
+            function performCheck(node, map) {
+                if (!canCheck(node, map)) return false;
+                const timeCost = 1;
+                const baseStaminaCost = staminaCostForNode(node);
+                globalRemainingTime = Math.max(0, globalRemainingTime - timeCost);
+                globalRemainingStamina = Math.max(0, globalRemainingStamina - baseStaminaCost);
+                map.totalStaminaSpent = (map.totalStaminaSpent || 0) + baseStaminaCost;
+                if (globalRemainingTime <= 0 || globalRemainingStamina <= 0) {
+                    maps.forEach(m => {
+                        if (!m.gameOver) {
+                            if (m.correctResult && m.correctResult.state === 'correct') endMapGame(m, 'win');
+                            else endMapGame(m, 'lose');
+                        }
+                    });
+                    refreshUIForActiveMap();
+                    checkAllMapsComplete();
+                    return true;
+                }
+                if (node.isCorrectPath) {
+                    markCorrect(node);
+                    if (node === map.correctResult && node.type === 'skill') {
+                        const spGain = 1 + (rareNodeBonus || 0);
+                        skillPoints += spGain;
+                        updateActiveSkillsBar();
+                    }
+                    let fork = node.parent;
+                    while (fork && !fork.isFork) fork = fork.parent;
+                    if (fork && fork.isFork) {
+                        let cur = node;
+                        while (cur && cur !== fork) {
+                            if (cur.type === 'process' || cur.type === 'skill') markCorrect(cur);
+                            cur = cur.parent;
+                        }
+                    }
+                    if (node === map.correctResult) {
+                        map.maxResultScore = computeMaxScore(map);
+                        endMapGame(map, 'win');
+                        refreshUIForActiveMap();
+                        checkTutorialProgressAfterAction(node, 'check');
+                        checkAllMapsComplete();
+                        return true;
+                    }
+                    let p = node.parent;
+                    while (p) {
+                        if (p.isCorrectPath) markCorrect(p);
+                        p = p.parent;
+                    }
+                } else {
+                    node.state = 'incorrect';
+                    let fork = node.parent;
+                    while (fork && !fork.isFork) fork = fork.parent;
+                    if (fork && fork.isFork) {
+                        let cur = node;
+                        while (cur && cur !== fork) {
+                            if (cur.type === 'process' || cur.type === 'skill') cur.state = 'incorrect';
+                            cur = cur.parent;
+                        }
+                        checkFork(fork);
+                    }
+                }
+                map.maxResultScore = computeMaxScore(map);
+                checkTutorialProgressAfterAction(node, 'check');
+                refreshUIForActiveMap();
+                return true;
+            }
+
+            function endMapGame(map, result) {
+                if (!map) return;
+                map.gameOver = true;
+                map.gameResult = result;
+                map.maxResultScore = computeMaxScore(map);
+                Object.values(map.nodeMap).forEach(n => {
+                    if (n.state === 'hidden') n.state = 'visible_locked';
+                });
+                if (result === 'lose' && map.correctResult) {
+                    let cur = map.correctResult;
+                    while (cur) {
+                        if (cur.state !== 'incorrect') cur.state = 'correct';
+                        cur = cur.parent;
+                    }
+                }
+                if (map === getActiveMap()) refreshUIForActiveMap();
+                updateMapButtons();
+            }
+
+            function isCorrectFound(map) {
+                return map && map.correctResult && map.correctResult.state === 'correct';
+            }
+
+            function checkAllMapsComplete() {
+                if (!gameStarted || tutorialActive) return;
+                const allDone = maps.every(m => m.gameOver);
+                const noResources = globalRemainingTime <= 0 || globalRemainingStamina <= 0;
+                if (allDone || (noResources && maps.every(m => m.gameOver || m.totalUnlocked > 0))) {
+                    // 确保所有地图都已结束
+                    maps.forEach(m => {
+                        if (!m.gameOver) {
+                            if (m.correctResult && m.correctResult.state === 'correct') endMapGame(m, 'win');
+                            else endMapGame(m, 'lose');
+                        }
+                    });
+                    const totalScore = maps.reduce((s, m) => s + (m.maxResultScore || 0), 0);
+                    const maxPossible = maps.length * 100;
+                    const passLine = Math.floor(maxPossible * 0.5);
+                    const passed = totalScore >= passLine;
+                    document.getElementById('modalTitle').textContent = passed ? '🎉 模拟赛结束！' : '📋 模拟赛结束';
+                    document.getElementById('modalText').textContent =
+                        '总分：' + totalScore + ' / ' + maxPossible + '（通过线：' + passLine + '分）\n' +
+                        (passed ? '恭喜通过！你可以在挖掘场继续提升能力。' : '未达到通过线，可以重新尝试或进入挖掘场提升能力。');
+                    document.getElementById('modalButtons').innerHTML = `
+                        <button class="btn btn-restart" id="btnModalRestart2">🔄 重新开始教程</button>
+                        <button class="btn-continue" id="btnModalDig2">⛏️ 进入挖掘场</button>
+                        <button class="btn-continue" id="btnModalRetrySim">▶ 重新生成模拟赛</button>
+                    `;
+                    document.getElementById('btnModalRestart2').addEventListener('click', () => {
+                        gameOverOverlay.classList.add('hidden');
+                        resetAndStartTutorial();
+                    });
+                    document.getElementById('btnModalDig2').addEventListener('click', () => {
+                        gameOverOverlay.classList.add('hidden');
+                        showNormalDigOverlay();
+                    });
+                    document.getElementById('btnModalRetrySim').addEventListener('click', () => {
+                        gameOverOverlay.classList.add('hidden');
+                        startNormalGame();
+                    });
+                    gameOverOverlay.classList.remove('hidden');
+                    updateScoreProgress();
+                    updateMapButtons();
+                }
+            }
+
+            function checkTutorialProgressAfterAction(node, actionType) {
+                if (!tutorialActive || tutorialPhase !== 'map') return;
+                const map = getActiveMap();
+                if (!map) return;
+                switch (tutorialStep) {
+                    case 1:
+                        if (actionType === 'unlock' && node.id === 'R' && node.state === 'unlocked') {
+                            tutorialStep = 2;
+                            updateTutorialGuide(2,
+                                '很好！现在请点击任意一个🔷检查节点（A或B）来解锁它。解锁后，请先检查它（点击外圈圆环），然后才能解锁其子结果节点。',
+                                '💡 点击左侧A节点试试——但解锁后必须先检查它，才能看到子节点。');
+                            setGlobalMessage('✅ 第1步完成！根节点已解锁，请继续点击检查节点A。', 'success');
+                            refreshUIForActiveMap();
+                        }
+                        break;
+                    case 2:
+                        if (actionType === 'unlock' && (node.id === 'A' || node.id === 'B') && node.state === 'unlocked') {
+                            tutorialPlayerChoseA = (node.id === 'A');
+                            tutorialStep = 3;
+                            const checkNodeId = tutorialPlayerChoseA ? 'A' : 'B';
+                            updateTutorialGuide(3,
+                                '解锁了！现在请🔍检查这个节点（点击节点外围的圆环）。检查节点会显示它下面所有结果节点中的最高分。注意：在检查之前，你不能解锁它的子节点。',
+                                '💡 点击' + checkNodeId + '节点外圈的圆环来进行检查。');
+                            setGlobalMessage('✅ 第2步完成！现在请检查节点' + checkNodeId + '（点击其外圈圆环）。',
+                                'success');
+                            refreshUIForActiveMap();
+                        }
+                        break;
+                    case 3:
+                        if (actionType === 'check' && (node.id === 'A' || node.id === 'B') && (node.state ===
+                                'correct' || node.state === 'incorrect')) {
+                            const maxScore = getMaxSubResult(node);
+                            tutorialStep = 4;
+                            const resultNodeHint = (node.id === 'A') ? 'A1（70分）' : '该检查节点下分数最高的结果节点';
+                            updateTutorialGuide(4,
+                                '检查完成！节点上显示的数字 ' + maxScore +
+                                ' 就是该检查节点下所有结果节点的最高分。现在请解锁任意一个结果节点，然后检查它来获取分数。',
+                                '💡 点击' + resultNodeHint + '来解锁并检查。最终分数取所有已检查结果节点的最高分。');
+                            setGlobalMessage('✅ 第3步完成！节点最高分是' + maxScore + '，请解锁一个结果节点。', 'success');
+                            refreshUIForActiveMap();
+                        }
+                        break;
+                    case 4:
+                        if (actionType === 'check' && (node.type === 'result' || node.type === 'skill') && (node.state ===
+                                'correct' || node.state === 'incorrect')) {
+                            tutorialStep = 5;
+                            tutorialStep5Triggered = false;
+                            const otherCheckNodeId = tutorialPlayerChoseA ? 'B' : 'A';
+                            updateTutorialGuide(5,
+                                '获得了分数！该地图的最终得分会取所有已检查结果节点中的最高分。现在请点击并检查另一个检查节点 ' +
+                                otherCheckNodeId +
+                                '。如果检查后出现虚线框，说明它下面有正确结果节点（100分）。',
+                                '💡 点击' + otherCheckNodeId + '节点并检查它。正确路径上的节点会有虚线框标记。');
+                            setGlobalMessage('✅ 第4步完成！现在请检查另一个检查节点' + otherCheckNodeId + '。', 'success');
+                            refreshUIForActiveMap();
+                        }
+                        break;
+                    case 5:
+                        if (actionType === 'check' && (node.id === 'A' || node.id === 'B') && !tutorialStep5Triggered) {
+                            tutorialStep5Triggered = true;
+                            const isCorrectPathNode = node.isCorrectPath;
+                            if (isCorrectPathNode) {
+                                tutorialStep = 6;
+                                const correctResultNode = map.correctResult;
+                                if (correctResultNode && correctResultNode.id === 'B1') {
+                                    correctResultNode.reqValue = 5;
+                                    correctResultNode.type = 'skill';
+                                    correctResultNode.name = '💎B1';
+                                    correctResultNode.score = 100;
+                                    map.hasSkillNode = true;
+                                    map.skillNodeId = correctResultNode.id;
+                                }
+                                updateTutorialGuide(6,
+                                    '虚线框代表正确路径！现在请点击正确结果节点 💎B1（100分）并检查它。注意：该节点的思维需求已提升至5（你的思维是4），思维需求大于思维时需要额外付出精力。精力初始为时间的1.5倍，但如果思维不够，再多的精力也不够用。检查特殊奖励节点可以获得技能点奖励！',
+                                    '💡 点击B1解锁后检查它。思维需求(5) > 思维(4)，需要消耗更多精力。');
+                                setGlobalMessage(
+                                    '✅ 第5步完成！虚线框标记了正确路径。B1的思维需求已提升至5，请解锁并检查它。',
+                                    'success');
+                            } else {
+                                updateTutorialGuide(5,
+                                    '这个节点不在正确路径上（没有虚线框）。请检查另一个检查节点来找到正确路径。正确路径上的检查节点会有虚线框标记。',
+                                    '💡 点击另一个检查节点（有虚线框的那个）来找到正确路径。');
+                                setGlobalMessage('ℹ️ 该节点不在正确路径上，请检查另一个检查节点。', 'info');
+                                tutorialStep5Triggered = false;
+                            }
+                            refreshUIForActiveMap();
+                        }
+                        break;
+                    case 6:
+                        if (actionType === 'check' && node.id === 'B1' && node.state === 'correct') {
+                            tutorialStep = 7;
+                            tutorialPhase = 'dig';
+                            skillPoints += 20;
+                            updateActiveSkillsBar();
+                            updateTutorialGuide(7,
+                                '太棒了！你获得了100分和技能点奖励。技能点可以用来在挖掘场中提升能力。现在请进入挖掘场，消耗技能点挖掘方块。在起始位置旁边有一个⏰时间扩展结构（3格），挖完它可以让每场比赛的初始时间+3！挖掘场中还有更多结构等你发现。',
+                                '💡 点击下方"开始挖掘"按钮进入挖掘场。从(0,0)出发，3步内挖完时间扩展结构。');
+                            setGlobalMessage(
+                                '✅ 第6步完成！获得100分+技能点！现在请进入挖掘场（即将自动打开）。', 'success');
+                            refreshUIForActiveMap();
+                            setTimeout(() => {
+                                showTutorialDigOverlay();
+                            }, 1200);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            function refreshUIForActiveMap() {
+                const map = getActiveMap();
+                if (!map) return;
+                const timeNumberEl = document.getElementById('timeNumber');
+                const staminaRefEl = document.getElementById('staminaRef');
+                const staminaDisplayEl = document.getElementById('staminaDisplay');
+                if (timeNumberEl) timeNumberEl.textContent = globalRemainingTime;
+                if (staminaRefEl) staminaRefEl.textContent = globalMaxStaminaActual;
+                if (staminaDisplayEl) staminaDisplayEl.textContent = globalRemainingStamina;
+                const timeRatio = Math.min(1, globalRemainingTime / Math.max(1, 20 + (timeBonusPerMap || 0)));
+                const staminaRatio = Math.min(1, globalRemainingStamina / Math.max(1, globalMaxStaminaActual));
+                const timeBar = document.getElementById('timeBarInner');
+                const staminaBar = document.getElementById('staminaBar');
+                if (timeBar) timeBar.style.width = (timeRatio * 100) + '%';
+                if (staminaBar) staminaBar.style.width = (staminaRatio * 100) + '%';
+                if (timeBar && staminaBar) {
+                    if (timeRatio >= staminaRatio) {
+                        timeBar.style.zIndex = 1;
+                        staminaBar.style.zIndex = 2;
+                    } else {
+                        timeBar.style.zIndex = 2;
+                        staminaBar.style.zIndex = 1;
+                    }
+                }
+                const correctFoundHint = document.getElementById('correctFoundHint');
+                if (correctFoundHint) {
+                    if (isCorrectFound(map) && !map.gameOver) {
+                        correctFoundHint.style.display = 'inline-block';
+                    } else {
+                        correctFoundHint.style.display = 'none';
+                    }
+                }
+                updateMindDisplay();
+                updateScoreProgress();
+                updateMapButtons();
+                drawTree(map);
+            }
+
+            function updateMapButtons() {
+                const buttons = document.querySelectorAll('.map-btn');
+                buttons.forEach(btn => {
+                    const idx = +btn.dataset.index;
+                    const m = maps[idx];
+                    if (!m) return;
+                    btn.classList.remove('active', 'win', 'lose');
+                    if (idx === activeMapIndex) btn.classList.add('active');
+                    if (m.gameOver && m.gameResult === 'win') btn.classList.add('win');
+                    else if (m.gameOver && m.gameResult === 'lose') btn.classList.add('lose');
+                    let icon = '⏳';
+                    if (m.gameOver) icon = m.gameResult === 'win' ? '✅' : '❌';
+                    btn.innerHTML =
+                        `${icon} 地图${idx+1} <small>(解锁 ${m.totalUnlocked||0}${m.gameOver?' · '+m.maxResultScore+'分':''})</small>`;
+                });
+            }
+
+            function drawTree(map) {
+                if (!map || !map.nodeMap) return;
+                ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+                ctx.fillStyle = '#fcfcfc';
+                ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+                const visible = Object.values(map.nodeMap).filter(n => n.state !== 'hidden');
+                const highlightNodeId = getTutorialHighlightNodeId();
+                visible.forEach(n => {
+                    if (n.children) {
+                        n.children.forEach(c => {
+                            if (c.state !== 'hidden') drawEdge(n, c);
+                        });
+                    }
+                });
+                visible.forEach(n => drawNode(n, map, n.id === highlightNodeId));
+                if (map.gameOver && map.gameResult === 'lose') {
+                    const correct = Object.values(map.nodeMap).filter(n => n.isCorrectPath && n.state !== 'hidden');
+                    correct.forEach(n => {
+                        const r = (n.type === 'important' ? 22 : 20) + 6;
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(80,80,80,0.7)';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 3]);
+                        ctx.beginPath();
+                        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.restore();
+                    });
+                }
+            }
+
+            function drawEdge(p, c) {
+                let col = '#999';
+                if (p.state === 'correct' && c.state === 'correct') col = '#555';
+                else if (p.state === 'incorrect' || c.state === 'incorrect') col = '#bbb';
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(c.x, c.y);
+                ctx.stroke();
+            }
+
+            function drawNode(node, map, isHighlighted) {
+                const cx = node.x;
+                const cy = node.y;
+                const r = node.type === 'important' ? 22 : 20;
+                let fill, stroke, textColor;
+                switch (node.state) {
+                    case 'visible_locked':
+                        fill = node.type === 'process' ? '#d5d5d5' : (node.type === 'important' ? '#888' : '#999');
+                        stroke = '#b0b0b0';
+                        textColor = node.type === 'important' ? '#fff' : '#444';
+                        break;
+                    case 'unlocked':
+                        fill = '#3a3a3a';
+                        stroke = '#1a1a1a';
+                        textColor = '#fff';
+                        break;
+                    case 'correct':
+                        fill = '#3a3a3a';
+                        stroke = '#1a1a1a';
+                        textColor = '#fff';
+                        break;
+                    case 'incorrect':
+                        fill = '#ffffff';
+                        stroke = '#999';
+                        textColor = '#555';
+                        break;
+                    default:
+                        return;
+                }
+                ctx.save();
+                if (isHighlighted && tutorialActive && tutorialPhase === 'map') {
+                    ctx.shadowColor = 'rgba(255,152,0,0.9)';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+                if (node.type === 'skill') {
+                    stroke = node.state === 'incorrect' ? '#999' : (node.state === 'correct' ? '#1a1a1a' : '#aaa');
+                    ctx.fillStyle = fill;
+                    ctx.strokeStyle = stroke;
+                    ctx.lineWidth = 2.5;
+                    if (node.state === 'incorrect') ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy - r);
+                    ctx.lineTo(cx + r, cy);
+                    ctx.lineTo(cx, cy + r);
+                    ctx.lineTo(cx - r, cy);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    node._bounds = { x: cx - r, y: cy - r, w: r * 2, h: r * 2 };
+                } else if (node.type === 'result') {
+                    const halfSide = r * 0.85;
+                    ctx.fillStyle = fill;
+                    ctx.strokeStyle = stroke;
+                    ctx.lineWidth = 2.5;
+                    if (node.state === 'incorrect') ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.rect(cx - halfSide, cy - halfSide, halfSide * 2, halfSide * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    node._bounds = { x: cx - halfSide, y: cy - halfSide, w: halfSide * 2, h: halfSide * 2 };
+                } else {
+                    ctx.fillStyle = fill;
+                    ctx.strokeStyle = stroke;
+                    ctx.lineWidth = 2.5;
+                    if (node.state === 'incorrect') ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    node._bounds = null;
+                }
+                if (node.state === 'incorrect') {
+                    const rng = seededRandom(getNodeSeed(node.id));
+                    for (let i = 0; i < 3; i++) {
+                        const angle = rng() * Math.PI * 2;
+                        const effectiveR = node.type === 'result' ? r * 0.85 : r;
+                        const len = effectiveR * (0.65 + rng() * 0.5);
+                        const startX = cx + Math.cos(angle) * len * 0.3;
+                        const startY = cy + Math.sin(angle) * len * 0.3;
+                        const endX = cx + Math.cos(angle) * len;
+                        const endY = cy + Math.sin(angle) * len;
+                        ctx.strokeStyle = '#aaa';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(endX, endY);
+                        ctx.stroke();
+                        const perpAngle = angle + Math.PI / 2;
+                        const branchLen = len * 0.25;
+                        const midX = (startX + endX) / 2;
+                        const midY = (startY + endY) / 2;
+                        ctx.beginPath();
+                        ctx.moveTo(midX, midY);
+                        ctx.lineTo(midX + Math.cos(perpAngle) * branchLen, midY + Math.sin(perpAngle) * branchLen);
+                        ctx.stroke();
+                    }
+                }
+                if (node.state === 'correct') {
+                    const boxSize = (node.type === 'result' ? r * 0.85 : r) + 7;
+                    ctx.strokeStyle = '#bbb';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 3]);
+                    ctx.beginPath();
+                    ctx.rect(cx - boxSize, cy - boxSize, boxSize * 2, boxSize * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                if (node.state === 'unlocked') {
+                    const canShowCheckRing = (node.type === 'important' || node.type === 'result' || node.type === 'skill');
+                    if (canShowCheckRing && !map.gameOver) {
+                        const ringR = (node.type === 'result' ? r * 0.85 : r) + 5;
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 2.8;
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+                        ctx.stroke();
+                        node._checkBounds = { x: cx - ringR - 3, y: cy - ringR - 3, w: (ringR + 3) * 2, h: (ringR + 3) *
+                                2 };
+                    } else {
+                        node._checkBounds = null;
+                    }
+                } else {
+                    node._checkBounds = null;
+                }
+                if (node.state === 'incorrect') {
+                    const score = getMaxSubResult(node);
+                    ctx.fillStyle = '#888';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(score, cx, cy);
+                } else {
+                    ctx.fillStyle = textColor;
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(node.name, cx, cy);
+                    if ((node.type === 'result' || node.type === 'skill') && node.score !== null && (node.state ===
+                            'unlocked' || node.state === 'correct')) {
+                        ctx.font = 'bold 9px sans-serif';
+                        ctx.fillText(node.score, cx, cy + 12);
+                    }
+                }
+                const staminaCost = staminaCostForNode(node);
+                ctx.fillStyle = '#777';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(staminaCost, cx, cy - r - 3);
+                const reqLabel = '需≥' + (node.reqValue || 0);
+                const labelY = cy + r + 12;
+                ctx.fillStyle = (node.state === 'correct' || node.state === 'unlocked') ? '#555' : '#888';
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(reqLabel, cx, labelY);
+                ctx.restore();
+            }
+
+            function hitTest(pos, map) {
+                if (!map || !map.nodeMap) return null;
+                const vis = Object.values(map.nodeMap).filter(n => n.state !== 'hidden');
+                for (const n of vis) {
+                    if (n._checkBounds && pos.x >= n._checkBounds.x && pos.x <= n._checkBounds.x + n._checkBounds.w &&
+                        pos.y >= n._checkBounds.y && pos.y <= n._checkBounds.y + n._checkBounds.h) {
+                        return { node: n, target: 'check' };
+                    }
+                }
+                for (const n of vis) {
+                    if (n._bounds) {
+                        if (pos.x >= n._bounds.x && pos.x <= n._bounds.x + n._bounds.w && pos.y >= n._bounds.y && pos.y <=
+                            n._bounds.y + n._bounds.h) {
+                            if (n.state === 'unlocked' && canCheck(n, map)) return { node: n, target: 'check' };
+                            if (n.state === 'visible_locked' && canUnlock(n, map)) return { node: n, target: 'node' };
+                            return null;
+                        }
+                    } else {
+                        const r = (n.type === 'important' ? 22 : 20) + 3;
+                        if (Math.hypot(pos.x - n.x, pos.y - n.y) <= r) {
+                            if (n.state === 'unlocked' && canCheck(n, map)) return { node: n, target: 'check' };
+                            if (n.state === 'visible_locked' && canUnlock(n, map)) return { node: n, target: 'node' };
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            canvas.addEventListener('click', e => {
+                if (!gameStarted) return;
+                const map = getActiveMap();
+                if (!map || map.gameOver) return;
+                if (tutorialActive && tutorialPhase === 'dig') return;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = LOGICAL_WIDTH / canvas.clientWidth;
+                const scaleY = LOGICAL_HEIGHT / canvas.clientHeight;
+                const hit = hitTest({
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                }, map);
+                if (!hit) return;
+                if (hit.target === 'check' && canCheck(hit.node, map)) performCheck(hit.node, map);
+                else if (hit.target === 'node' && canUnlock(hit.node, map)) unlockNode(hit.node, map);
+            });
+
+            canvas.addEventListener('mousemove', e => {
+                if (!gameStarted) {
+                    canvas.style.cursor = 'default';
+                    return;
+                }
+                const map = getActiveMap();
+                if (!map || map.gameOver) {
+                    canvas.style.cursor = 'default';
+                    return;
+                }
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = LOGICAL_WIDTH / canvas.clientWidth;
+                const scaleY = LOGICAL_HEIGHT / canvas.clientHeight;
+                const hit = hitTest({
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                }, map);
+                canvas.style.cursor = (hit && ((hit.target === 'check' && canCheck(hit.node, map)) || (hit.target ===
+                    'node' && canUnlock(hit.node, map)))) ? 'pointer' : 'default';
+            });
+
+            document.getElementById('mapSelector').addEventListener('click', e => {
+                const btn = e.target.closest('.map-btn');
+                if (!btn) return;
+                const idx = +btn.dataset.index;
+                if (!isNaN(idx) && idx < maps.length) {
+                    activeMapIndex = idx;
+                    refreshUIForActiveMap();
+                }
+            });
+
+            document.getElementById('btnRestart').addEventListener('click', () => {
+                resetAndStartTutorial();
+            });
+            document.getElementById('btnModalRestart').addEventListener('click', () => {
+                document.getElementById('gameOverOverlay').classList.add('hidden');
+                resetAndStartTutorial();
+            });
+            document.getElementById('btnModalContinue').addEventListener('click', () => {
+                document.getElementById('gameOverOverlay').classList.add('hidden');
+                startNormalGame();
+            });
+
+            function resizeCanvas() {
+                const wrapper = canvas.parentElement;
+                if (!wrapper) return;
+                const scale = Math.min(1, wrapper.clientWidth / LOGICAL_WIDTH);
+                canvas.style.width = (LOGICAL_WIDTH * scale) + 'px';
+                canvas.style.height = (LOGICAL_HEIGHT * scale) + 'px';
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            function getDigNeighbors(r, c) {
+                const dirs = [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]
+                ];
+                const result = [];
+                for (const [dr, dc] of dirs) {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < DIG_ROWS && nc >= 0 && nc < DIG_COLS) result.push({ r: nr, c: nc });
+                }
+                return result;
+            }
+
+            function initTutorialDigGrid() {
+                digGridCells = [];
+                digGridRevealed = [];
+                digCellStructureMap = [];
+                digStructureGroups = [];
+                tutorialDigOtherStructRevealed = {};
+                for (let r = 0; r < DIG_ROWS; r++) {
+                    digGridCells[r] = [];
+                    digGridRevealed[r] = [];
+                    digCellStructureMap[r] = [];
+                    for (let c = 0; c < DIG_COLS; c++) {
+                        digGridCells[r][c] = 'empty';
+                        digGridRevealed[r][c] = false;
+                        digCellStructureMap[r][c] = -1;
+                    }
+                }
+                // 时间扩展结构 (3格) - 紧邻起点
+                const teCells = [{ r: 0, c: 1 }, { r: 1, c: 0 }, { r: 1, c: 1 }];
+                let structIdx = 0;
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'time_extend',
+                    name: '⏰时间扩展',
+                    cells: teCells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                teCells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'time_extend';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 思维块结构 (4格) - 在时间扩展右侧
+                structIdx++;
+                const mbCells = [{ r: 0, c: 3 }, { r: 0, c: 4 }, { r: 1, c: 3 }, { r: 1, c: 4 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'mind_box',
+                    name: '🧠思维块',
+                    cells: mbCells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                mbCells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'mind_box';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 稀有提升结构 (3格) - 在下方
+                structIdx++;
+                const rbCells = [{ r: 3, c: 0 }, { r: 3, c: 1 }, { r: 4, c: 0 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'rare_boost',
+                    name: '💠稀有提升',
+                    cells: rbCells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                rbCells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'rare_boost';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 失败保护结构 (4格) - 在更远处
+                structIdx++;
+                const fsCells = [{ r: 3, c: 4 }, { r: 3, c: 5 }, { r: 4, c: 4 }, { r: 4, c: 5 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'fail_safe',
+                    name: '🛡️失败保护',
+                    cells: fsCells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                fsCells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'fail_safe';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 振奋结构 (3格)
+                structIdx++;
+                const inspCells = [{ r: 6, c: 0 }, { r: 6, c: 1 }, { r: 7, c: 0 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'inspire',
+                    name: '⚡振奋结构',
+                    cells: inspCells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                inspCells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'inspire';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 第二个时间扩展结构 (3格) - 在远处
+                structIdx++;
+                const te2Cells = [{ r: 8, c: 3 }, { r: 8, c: 4 }, { r: 9, c: 3 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'time_extend',
+                    name: '⏰时间扩展II',
+                    cells: te2Cells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                te2Cells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'time_extend';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+                // 第二个思维块结构 (4格)
+                structIdx++;
+                const mb2Cells = [{ r: 8, c: 6 }, { r: 8, c: 7 }, { r: 9, c: 6 }, { r: 9, c: 7 }];
+                digStructureGroups.push({
+                    id: structIdx,
+                    type: 'mind_box',
+                    name: '🧠思维块II',
+                    cells: mb2Cells,
+                    allRevealed: false,
+                    effectApplied: false
+                });
+                mb2Cells.forEach(cell => {
+                    digGridCells[cell.r][cell.c] = 'mind_box';
+                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                });
+
+                digGridRevealed[0][0] = true;
+                digGridCells[0][0] = 'empty';
+                digViewportTransform = { x: 0, y: 0 };
+                tutorialDigStructRevealed = false;
+            }
+
+            function initNormalDigGrid() {
+                digGridCells = [];
+                digGridRevealed = [];
+                digCellStructureMap = [];
+                digStructureGroups = [];
+                for (let r = 0; r < DIG_ROWS; r++) {
+                    digGridCells[r] = [];
+                    digGridRevealed[r] = [];
+                    digCellStructureMap[r] = [];
+                    for (let c = 0; c < DIG_COLS; c++) {
+                        digGridCells[r][c] = 'empty';
+                        digGridRevealed[r][c] = false;
+                        digCellStructureMap[r][c] = -1;
+                    }
+                }
+                // 在普通挖掘场中散布多种结构
+                const structDefs = [
+                    { type: 'time_extend', name: '⏰时间扩展', size: 3, count: 3, effectDesc: '+3时间/场' },
+                    { type: 'mind_box', name: '🧠思维块', size: 4, count: 3, effectDesc: '+1思维' },
+                    { type: 'rare_boost', name: '💠稀有提升', size: 3, count: 2, effectDesc: '+0.5稀有奖励' },
+                    { type: 'fail_safe', name: '🛡️失败保护', size: 4, count: 2, effectDesc: '一次保护' },
+                    { type: 'inspire', name: '⚡振奋结构', size: 3, count: 2, effectDesc: '+1振奋' },
+                ];
+                let structIdx = 0;
+                const usedCells = new Set();
+                usedCells.add('0,0'); // 起点
+                digGridRevealed[0][0] = true;
+                digGridCells[0][0] = 'empty';
+
+                structDefs.forEach(def => {
+                    for (let ci = 0; ci < def.count; ci++) {
+                        let attempts = 0;
+                        let placed = false;
+                        while (attempts < 200 && !placed) {
+                            attempts++;
+                            const startR = randomInt(0, DIG_ROWS - 3);
+                            const startC = randomInt(0, DIG_COLS - 3);
+                            // 生成形状
+                            const shapeCells = [];
+                            const sr = startR;
+                            const sc = startC;
+                            if (def.size === 3) {
+                                // L形或直线
+                                if (Math.random() < 0.5) {
+                                    shapeCells.push({ r: sr, c: sc }, { r: sr, c: sc + 1 }, { r: sr + 1, c: sc });
+                                } else {
+                                    shapeCells.push({ r: sr, c: sc }, { r: sr + 1, c: sc }, { r: sr + 1, c: sc + 1 });
+                                }
+                            } else if (def.size === 4) {
+                                shapeCells.push({ r: sr, c: sc }, { r: sr, c: sc + 1 }, { r: sr + 1, c: sc }, { r: sr + 1,
+                                    c: sc + 1 });
+                            }
+                            const allValid = shapeCells.every(cell =>
+                                cell.r >= 0 && cell.r < DIG_ROWS && cell.c >= 0 && cell.c < DIG_COLS &&
+                                !usedCells.has(cell.r + ',' + cell.c) && digGridCells[cell.r][cell.c] === 'empty'
+                            );
+                            if (allValid) {
+                                shapeCells.forEach(cell => usedCells.add(cell.r + ',' + cell.c));
+                                digStructureGroups.push({
+                                    id: structIdx,
+                                    type: def.type,
+                                    name: def.name,
+                                    cells: shapeCells,
+                                    allRevealed: false,
+                                    effectApplied: false,
+                                    effectDesc: def.effectDesc
+                                });
+                                shapeCells.forEach(cell => {
+                                    digGridCells[cell.r][cell.c] = def.type;
+                                    digCellStructureMap[cell.r][cell.c] = structIdx;
+                                });
+                                structIdx++;
+                                placed = true;
+                            }
+                        }
+                    }
+                });
+                digViewportTransform = { x: 0, y: 0 };
+            }
+
+            function getUnrevealedCount() {
+                let count = 0;
+                for (let r = 0; r < DIG_ROWS; r++)
+                    for (let c = 0; c < DIG_COLS; c++)
+                        if (!digGridRevealed[r][c]) count++;
+                return count;
+            }
+
+            function handleDigClick(r, c, cellEl) {
+                if (digGridRevealed[r][c]) return;
+                if (skillPoints < 1) {
+                    setDigMessage('⚠️ 技能点不足！需要1点技能点来挖掘。请先完成更多地图来获取技能点。', 'warning', 6000);
+                    return;
+                }
+                const dirs = [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]
+                ];
+                let hasAdjacentRevealed = false;
+                for (const [dr, dc] of dirs) {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < DIG_ROWS && nc >= 0 && nc < DIG_COLS && digGridRevealed[nr][nc]) {
+                        hasAdjacentRevealed = true;
+                        break;
+                    }
+                }
+                if (!hasAdjacentRevealed) {
+                    setDigMessage('⚠️ 只能挖掘已探索方块相邻的格子！请从已揭示的区域向外扩展。', 'warning', 5000);
+                    return;
+                }
+                const savedTransform = { x: digViewportTransform.x, y: digViewportTransform.y };
+                skillPoints -= 1;
+                digGridRevealed[r][c] = true;
+                const content = digGridCells[r][c];
+                const structIdx = digCellStructureMap[r][c];
+                let structCompleted = false;
+                let structType = null;
+                if (structIdx >= 0) {
+                    const struct = digStructureGroups[structIdx];
+                    if (!struct.effectApplied && struct.cells.every(cell => digGridRevealed[cell.r][cell.c])) {
+                        struct.effectApplied = true;
+                        struct.allRevealed = true;
+                        structCompleted = true;
+                        structType = struct.type;
+                        if (struct.type === 'time_extend') {
+                            timeBonusPerMap += 3;
+                            if (tutorialActive) tutorialDigStructRevealed = true;
+                            setDigMessage('⏰ 时间扩展结构完全揭示！每场比赛初始时间+3（当前累计+' + timeBonusPerMap +
+                                '）。这意味着以后的每场比赛你都会有更多的时间来探索！', 'success', 8000);
+                        } else if (struct.type === 'mind_box') {
+                            globalMind += 1;
+                            setDigMessage('🧠 思维块结构完全揭示！思维永久+1（当前思维：' + globalMind +
+                                '）。更高的思维意味着解锁节点时消耗更少的精力！', 'success', 8000);
+                        } else if (struct.type === 'rare_boost') {
+                            rareNodeBonus += 0.5;
+                            setDigMessage('💠 稀有提升结构完全揭示！稀有节点奖励+0.5（当前累计+' + rareNodeBonus.toFixed(1) +
+                                '）。检查特殊奖励节点时将获得更多技能点！', 'success', 8000);
+                        } else if (struct.type === 'fail_safe') {
+                            failSafeAvailable = true;
+                            failSafeUsed = false;
+                            setDigMessage('🛡️ 失败保护结构完全揭示！获得一次失败保护。当你在比赛中即将失败时，会自动触发保护。', 'success',
+                                8000);
+                        } else if (struct.type === 'inspire') {
+                            inspireStructuresRevealed += 1;
+                            setDigMessage('⚡ 振奋结构完全揭示！振奋层数+1（当前：' + inspireStructuresRevealed +
+                                '）。振奋层数会影响奖励倍数。', 'success', 8000);
+                        }
+                        if (tutorialActive && !tutorialDigStructRevealed && struct.type !== 'time_extend') {
+                            tutorialDigOtherStructRevealed[struct.type] = true;
+                            setDigMessage(struct.name + ' 结构已揭示！在完整游戏中还有更多结构等待探索。请继续挖掘⏰时间扩展结构来完成教程目标。',
+                                'info', 7000);
+                        }
+                    }
+                }
+                updateActiveSkillsBar();
+                updateMindDisplay();
+                const digSpEl = document.getElementById('digSkillPoints');
+                const digMindEl = document.getElementById('digMindDisplay');
+                if (digSpEl) digSpEl.textContent = formatSkillPoints(skillPoints);
+                if (digMindEl) digMindEl.textContent = globalMind;
+                updateDigBonusInfo();
+                renderDigGrid(true);
+                digViewportTransform = savedTransform;
+                const viewport = document.getElementById('digViewport');
+                if (viewport) {
+                    viewport.style.transform = `translate(${savedTransform.x}px, ${savedTransform.y}px)`;
+                }
+                const remainingHintEl = document.getElementById('digRemainingHint');
+                if (remainingHintEl) {
+                    const unrevealed = getUnrevealedCount();
+                    remainingHintEl.textContent = '剩余未挖掘方块：' + unrevealed + ' / ' + (DIG_ROWS * DIG_COLS) +
+                        ' | 已揭示结构：' + digStructureGroups.filter(s => s.allRevealed).length + ' / ' + digStructureGroups
+                        .length;
+                }
+                if (tutorialActive && !tutorialDigStructRevealed && !structCompleted) {
+                    const teStruct = digStructureGroups.find(s => s.type === 'time_extend' && !s.allRevealed);
+                    if (teStruct) {
+                        const remaining = teStruct.cells.filter(cell => !digGridRevealed[cell.r][cell.c]).length;
+                        setDigMessage('💡 继续挖掘相邻的⏰标记方块来完成时间扩展结构！还需' + remaining + '个格子。', 'info', 4000);
+                    }
+                }
+                // 检查教程挖掘场中时间扩展是否完成
+                if (tutorialActive && tutorialDigStructRevealed && !structCompleted) {
+                    const closeBtn = document.getElementById('btnCloseDig');
+                    if (closeBtn && closeBtn.textContent.indexOf('完成教程') === -1) {
+                        closeBtn.textContent = '▶ 完成教程，开始CSP-S模拟赛练习';
+                        closeBtn.style.background = '#4a9a3f';
+                        closeBtn.style.color = '#fff';
+                        updateTutorialGuide(7,
+                            '🎉 太棒了！时间扩展结构已完全揭示！以后每场比赛初始时间都会+3。挖掘场中还有更多结构等待探索：思维块(+1思维)、稀有提升(+技能点奖励)、失败保护等。现在请点击下方按钮进入CSP-S模拟赛练习！',
+                            '💡 练习赛中你可以自由探索完整的游戏机制，共有4张地图等你挑战。');
+                    }
+                }
+            }
+
+            function updateDigBonusInfo() {
+                const el = document.getElementById('digBonusInfo');
+                if (!el) return;
+                let parts = [];
+                if (timeBonusPerMap > 0) parts.push('⏰时间加成+' + timeBonusPerMap);
+                if (globalMind > INITIAL_MIND) parts.push('🧠思维+' + (globalMind - INITIAL_MIND));
+                if (rareNodeBonus > 0) parts.push('💠稀有提升+' + rareNodeBonus.toFixed(1));
+                if (rewardMultiplier > 1) parts.push('🔷奖励倍数×' + rewardMultiplier.toFixed(1));
+                if (inspireStructuresRevealed > 0) parts.push('⚡振奋结构×' + inspireStructuresRevealed);
+                if (failSafeAvailable && !failSafeUsed) parts.push('🛡️失败保护可用');
+                el.textContent = parts.length > 0 ? parts.join(' | ') : '尚未揭示任何结构';
+            }
+
+            function renderDigGrid(keepTransform) {
+                const gridEl = document.getElementById('digGrid');
+                const viewport = document.getElementById('digViewport');
+                if (!gridEl) return;
+                gridEl.style.gridTemplateColumns = `repeat(${DIG_COLS}, 50px)`;
+                gridEl.style.gridTemplateRows = `repeat(${DIG_ROWS}, 50px)`;
+                gridEl.innerHTML = '';
+                for (let r = 0; r < DIG_ROWS; r++) {
+                    for (let c = 0; c < DIG_COLS; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'dig-cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        if (digGridRevealed[r][c]) {
+                            cell.classList.add('revealed');
+                            const content = digGridCells[r][c];
+                            if (content === 'time_extend') {
+                                cell.classList.add('reward-time-extend');
+                                cell.textContent = '⏰';
+                            } else if (content === 'mind_box') {
+                                cell.classList.add('reward-mind-box');
+                                cell.textContent = '🧠';
+                            } else if (content === 'rare_boost') {
+                                cell.classList.add('reward-rare-boost');
+                                cell.textContent = '💠';
+                            } else if (content === 'fail_safe') {
+                                cell.classList.add('reward-fail-safe');
+                                cell.textContent = '🛡️';
+                            } else if (content === 'inspire') {
+                                cell.classList.add('reward-inspire');
+                                cell.textContent = '⚡';
+                            } else if (content === 'empty') {
+                                cell.classList.add('reward-empty');
+                                cell.textContent = '·';
+                            } else {
+                                cell.textContent = content;
+                            }
+                        } else {
+                            cell.classList.add('unrevealed');
+                            cell.textContent = '?';
+                            cell.addEventListener('click', () => handleDigClick(r, c, cell));
+                        }
+                        gridEl.appendChild(cell);
+                    }
+                }
+                if (viewport && !keepTransform) {
+                    digViewportTransform = { x: 0, y: 0 };
+                    viewport.style.transform = 'translate(0, 0)';
+                }
+            }
+
+            function initDigDrag() {
+                const viewport = document.getElementById('digViewport');
+                if (!viewport) return;
+                removeDigDrag();
+                viewport.addEventListener('mousedown', onDigDragStart);
+                viewport.addEventListener('touchstart', onDigDragStart, { passive: false });
+                window.addEventListener('mousemove', onDigDragMove);
+                window.addEventListener('touchmove', onDigDragMove, { passive: false });
+                window.addEventListener('mouseup', onDigDragEnd);
+                window.addEventListener('touchend', onDigDragEnd);
+            }
+
+            function removeDigDrag() {
+                const viewport = document.getElementById('digViewport');
+                if (viewport) {
+                    viewport.removeEventListener('mousedown', onDigDragStart);
+                    viewport.removeEventListener('touchstart', onDigDragStart);
+                }
+                window.removeEventListener('mousemove', onDigDragMove);
+                window.removeEventListener('touchmove', onDigDragMove);
+                window.removeEventListener('mouseup', onDigDragEnd);
+                window.removeEventListener('touchend', onDigDragEnd);
+            }
+
+            function onDigDragStart(e) {
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                digDragStart = { x: clientX - digViewportTransform.x, y: clientY - digViewportTransform.y };
+                const viewport = document.getElementById('digViewport');
+                if (viewport) viewport.classList.add('dragging');
+            }
+
+            function onDigDragMove(e) {
+                if (!digDragStart) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dx = clientX - digDragStart.x;
+                const dy = clientY - digDragStart.y;
+                const maxX = 0;
+                const minX = Math.min(0, 500 - DIG_COLS * 50);
+                const maxY = 0;
+                const minY = Math.min(0, 500 - DIG_ROWS * 50);
+                digViewportTransform.x = Math.max(minX, Math.min(maxX, dx));
+                digViewportTransform.y = Math.max(minY, Math.min(maxY, dy));
+                const viewport = document.getElementById('digViewport');
+                if (viewport) viewport.style.transform =
+                    `translate(${digViewportTransform.x}px, ${digViewportTransform.y}px)`;
+            }
+
+            function onDigDragEnd(e) {
+                if (!digDragStart) return;
+                digDragStart = null;
+                const viewport = document.getElementById('digViewport');
+                if (viewport) viewport.classList.remove('dragging');
+            }
+
+            function showTutorialDigOverlay() {
+                initTutorialDigGrid();
+                const digSpEl = document.getElementById('digSkillPoints');
+                const digMindEl = document.getElementById('digMindDisplay');
+                if (digSpEl) digSpEl.textContent = formatSkillPoints(skillPoints);
+                if (digMindEl) digMindEl.textContent = globalMind;
+                updateDigBonusInfo();
+                setDigMessage('💡 从起点(0,0)出发，挖掘相邻的⏰标记方块来完成时间扩展结构！图中还有🧠思维块、💠稀有提升、🛡️失败保护、⚡振奋等结构等你发现。',
+                    'info', 10000);
+                renderDigGrid(false);
+                const remainingHintEl = document.getElementById('digRemainingHint');
+                if (remainingHintEl) {
+                    remainingHintEl.textContent = '剩余未挖掘方块：' + getUnrevealedCount() + ' / ' + (DIG_ROWS * DIG_COLS) +
+                        ' | 结构：' + digStructureGroups.length + '个';
+                }
+                const closeBtn = document.getElementById('btnCloseDig');
+                if (closeBtn) {
+                    closeBtn.textContent = '▶ 完成挖掘，开始练习赛';
+                    closeBtn.style.background = '#444';
+                    closeBtn.style.color = '#fff';
+                }
+                initDigDrag();
+                skillUpgradeOverlay.classList.remove('hidden');
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        skillUpgradeOverlay.classList.add('hidden');
+                        removeDigDrag();
+                        if (tutorialDigStructRevealed) {
+                            setGlobalMessage('🎉 时间扩展结构已揭示！以后每场比赛初始时间+3。', 'success');
+                        }
+                        completeTutorialAndStartNormalGame();
+                    };
+                }
+            }
+
+            function showNormalDigOverlay() {
+                initNormalDigGrid();
+                const digSpEl = document.getElementById('digSkillPoints');
+                const digMindEl = document.getElementById('digMindDisplay');
+                if (digSpEl) digSpEl.textContent = formatSkillPoints(skillPoints);
+                if (digMindEl) digMindEl.textContent = globalMind;
+                updateDigBonusInfo();
+                setDigMessage('💡 从起点(0,0)出发，挖掘相邻方块来发现结构。完成结构可获得永久加成！', 'info', 8000);
+                renderDigGrid(false);
+                const remainingHintEl = document.getElementById('digRemainingHint');
+                if (remainingHintEl) {
+                    remainingHintEl.textContent = '剩余未挖掘方块：' + getUnrevealedCount() + ' / ' + (DIG_ROWS * DIG_COLS) +
+                        ' | 结构：' + digStructureGroups.length + '个';
+                }
+                const closeBtn = document.getElementById('btnCloseDig');
+                if (closeBtn) {
+                    closeBtn.textContent = '▶ 返回模拟赛';
+                    closeBtn.style.background = '#444';
+                    closeBtn.style.color = '#fff';
+                }
+                initDigDrag();
+                skillUpgradeOverlay.classList.remove('hidden');
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        skillUpgradeOverlay.classList.add('hidden');
+                        removeDigDrag();
+                        updateActiveSkillsBar();
+                        updateMindDisplay();
+                        updateScoreProgress();
+                        refreshUIForActiveMap();
+                        setGlobalMessage('⛏️ 挖掘场已关闭。加成效果已保存。', 'info');
+                    };
+                }
+            }
+
+            function completeTutorialAndStartNormalGame() {
+                tutorialActive = false;
+                tutorialPhase = 'done';
+                updateTutorialGuide(null);
+                const badge = document.getElementById('tutorialBadge');
+                if (badge) {
+                    badge.textContent = '✅ 已完成';
+                    badge.style.background = '#4a9a3f';
+                }
+                const levelNameEl = document.getElementById('levelName');
+                if (levelNameEl) levelNameEl.textContent = 'CSP-S 模拟赛';
+                const levelBanner = document.getElementById('levelBanner');
+                if (levelBanner) levelBanner.classList.add('sim');
+                setGlobalMessage('🎓 教程完成！现在开始CSP-S模拟赛练习，共有4张地图，祝你好运！', 'success');
+                startNormalGame();
+            }
+
+            function createTutorialMap() {
+                const nodeMap = {};
+                const R = { id: 'R', name: 'R', type: 'process', isCorrectPath: true, children: [], parent: null, level: 0,
+                    reqValue: 0, score: null, state: 'hidden', x: 0, y: 0, isFork: false, _bounds: null, _checkBounds: null };
+                const A = { id: 'A', name: 'A', type: 'important', isCorrectPath: false, children: [], parent: null, level: 1,
+                    reqValue: 1, score: null, state: 'hidden', x: 0, y: 0, isFork: true, _bounds: null, _checkBounds: null };
+                const B = { id: 'B', name: 'B', type: 'important', isCorrectPath: true, children: [], parent: null, level: 1,
+                    reqValue: 1, score: null, state: 'hidden', x: 0, y: 0, isFork: true, _bounds: null, _checkBounds: null };
+                const A1 = { id: 'A1', name: 'A1', type: 'result', isCorrectPath: false, children: [], parent: null, level: 2,
+                    reqValue: 1, score: 70, state: 'hidden', x: 0, y: 0, isFork: false, _bounds: null, _checkBounds: null };
+                const A2 = { id: 'A2', name: 'A2', type: 'result', isCorrectPath: false, children: [], parent: null, level: 2,
+                    reqValue: 1, score: 60, state: 'hidden', x: 0, y: 0, isFork: false, _bounds: null, _checkBounds: null };
+                const B1 = { id: 'B1', name: 'B1', type: 'result', isCorrectPath: true, children: [], parent: null, level: 2,
+                    reqValue: 2, score: 100, state: 'hidden', x: 0, y: 0, isFork: false, _bounds: null, _checkBounds: null };
+                const B2 = { id: 'B2', name: 'B2', type: 'result', isCorrectPath: false, children: [], parent: null, level: 2,
+                    reqValue: 1, score: 40, state: 'hidden', x: 0, y: 0, isFork: false, _bounds: null, _checkBounds: null };
+                R.children = [A, B];
+                A.parent = R;
+                B.parent = R;
+                A.children = [A1, A2];
+                A1.parent = A;
+                A2.parent = A;
+                B.children = [B1, B2];
+                B1.parent = B;
+                B2.parent = B;
+                const allNodes = [R, A, B, A1, A2, B1, B2];
+                allNodes.forEach(n => { nodeMap[n.id] = n; });
+                const root = nodeMap['R'];
+                const levelHeight = LOGICAL_HEIGHT / 4;
+                const topMargin = levelHeight * 0.9;
+                root.x = LOGICAL_WIDTH / 2;
+                root.y = topMargin;
+                A.x = LOGICAL_WIDTH / 2 - 200;
+                A.y = topMargin + levelHeight;
+                B.x = LOGICAL_WIDTH / 2 + 200;
+                B.y = topMargin + levelHeight;
+                A1.x = A.x - 70;
+                A1.y = A.y + levelHeight;
+                A2.x = A.x + 70;
+                A2.y = A.y + levelHeight;
+                B1.x = B.x - 70;
+                B1.y = B.y + levelHeight;
+                B2.x = B.x + 70;
+                B2.y = B.y + levelHeight;
+                Object.values(nodeMap).forEach(n => { n.state = 'hidden'; });
+                root.state = 'visible_locked';
+                return {
+                    nodeMap,
+                    root,
+                    correctResult: nodeMap['B1'],
+                    totalUnlocked: 0,
+                    gameOver: false,
+                    gameResult: null,
+                    maxResultScore: 0,
+                    hasSkillNode: false,
+                    skillNodeId: null,
+                    totalStaminaSpent: 0,
+                };
+            }
+
+            function startNormalGame() {
+                tutorialActive = false;
+                tutorialPhase = 'done';
+                updateTutorialGuide(null);
+                const badge = document.getElementById('tutorialBadge');
+                if (badge) badge.style.display = 'none';
+                const levelNameEl = document.getElementById('levelName');
+                if (levelNameEl) levelNameEl.textContent = 'CSP-S 模拟赛';
+                const levelBanner = document.getElementById('levelBanner');
+                if (levelBanner) levelBanner.classList.add('sim');
+                gameStarted = true;
+                globalRemainingTime = 25 + (timeBonusPerMap || 0);
+                globalMaxStaminaActual = Math.floor(globalRemainingTime * 1.5);
+                globalRemainingStamina = globalMaxStaminaActual;
+                maps = [];
+                // 生成4张地图
+                const numMaps = 4;
+                for (let i = 0; i < numMaps; i++) {
+                    const minCorrectDepth = 2 + (i % 3); // 不同深度
+                    const nodeDefsData = generateRandomTreeData(minCorrectDepth, i);
+                    const mapData = buildMapFromDefs(nodeDefsData);
+                    maps.push(mapData);
+                }
+                activeMapIndex = 0;
+                updateMapSelectorButtons();
+                refreshUIForActiveMap();
+                gameOverOverlay.classList.add('hidden');
+                skillUpgradeOverlay.classList.add('hidden');
+                setGlobalMessage('🏁 自由练习开始！共' + numMaps + '张地图，总分' + (numMaps * 100) +
+                    '分。探索树形结构，找到正确结果节点！你还可以随时进入挖掘场提升能力。', 'info');
+                updateActiveSkillsBar();
+                updateMindDisplay();
+                updateScoreProgress();
+                const staminaDisplayEl = document.getElementById('staminaDisplay');
+                const staminaRefEl = document.getElementById('staminaRef');
+                const timeNumberEl = document.getElementById('timeNumber');
+                if (staminaDisplayEl) staminaDisplayEl.textContent = globalRemainingStamina;
+                if (staminaRefEl) staminaRefEl.textContent = globalMaxStaminaActual;
+                if (timeNumberEl) timeNumberEl.textContent = globalRemainingTime;
+            }
+
+            function generateRandomTreeData(minCorrectDepth, seedOffset) {
+                const baseNodes = 10 + (seedOffset % 4);
+                const targetNodes = randomInt(baseNodes, baseNodes + 6);
+                let idCounter = 0;
+
+                function newId() { return 'N' + (idCounter++); }
+                const root = {
+                    id: 'R',
+                    name: 'R',
+                    type: 'process',
+                    isCorrectPath: false,
+                    children: [],
+                    parent: null,
+                    level: 0,
+                    reqValue: randomInt(0, 1),
+                    score: null
+                };
+                const allNodes = [root];
+                const expandable = [root];
+
+                function getMaxChildrenForType(type) {
+                    if (type === 'important') return 2;
+                    if (type === 'result') return 0;
+                    return 3;
+                }
+                let safetyCounter = 0;
+                const maxIterations = targetNodes * 5;
+                while (allNodes.length < targetNodes && safetyCounter < maxIterations) {
+                    safetyCounter++;
+                    let candidates = expandable.filter(p => p.children.length < getMaxChildrenForType(p.type));
+                    if (candidates.length === 0) {
+                        candidates = allNodes.filter(n => n.type !== 'result' && n.children.length < getMaxChildrenForType(
+                            n.type));
+                    }
+                    if (candidates.length === 0) {
+                        const np = {
+                            id: newId(),
+                            name: newId(),
+                            type: 'process',
+                            isCorrectPath: false,
+                            children: [],
+                            parent: root,
+                            level: 1,
+                            reqValue: randomInt(0, 2),
+                            score: null
+                        };
+                        root.children.push(np);
+                        allNodes.push(np);
+                        expandable.push(np);
+                        candidates = [np];
+                    }
+                    const idx = randomInt(0, candidates.length - 1);
+                    const parent = candidates[idx];
+                    const remaining = targetNodes - allNodes.length;
+                    const maxChildren = getMaxChildrenForType(parent.type);
+                    const availableSlots = maxChildren - parent.children.length;
+                    const maxToAdd = Math.min(2, remaining);
+                    const childCount = Math.min(availableSlots, randomInt(1, Math.max(1, maxToAdd)));
+                    for (let i = 0; i < childCount; i++) {
+                        if (allNodes.length >= targetNodes) break;
+                        const childLevel = (parent.level || 0) + 1;
+                        const randVal = Math.random();
+                        let childType;
+                        if (randVal < 0.2) childType = 'important';
+                        else if (randVal < 0.7) childType = 'process';
+                        else childType = 'result';
+                        const child = {
+                            id: newId(),
+                            name: newId(),
+                            type: childType,
+                            isCorrectPath: false,
+                            children: [],
+                            parent,
+                            level: childLevel,
+                            reqValue: randomInt(0, childLevel + 1),
+                            score: null
+                        };
+                        allNodes.push(child);
+                        parent.children.push(child);
+                        if (childType !== 'result') expandable.push(child);
+                    }
+                    const idxInExpandable = expandable.indexOf(parent);
+                    if (idxInExpandable >= 0 && parent.children.length >= getMaxChildrenForType(parent.type)) {
+                        expandable.splice(idxInExpandable, 1);
+                    }
+                }
+                let resultLeaves = allNodes.filter(n => n.type === 'result');
+                if (resultLeaves.length === 0) {
+                    let some = allNodes.find(n => n.type === 'process' && n.children.length < getMaxChildrenForType(n
+                        .type)) || allNodes[allNodes.length - 1];
+                    if (some && some.type === 'result') some.type = 'process';
+                    if (some) {
+                        const childLevel = (some.level || 0) + 1;
+                        const res = {
+                            id: newId(),
+                            name: newId(),
+                            type: 'result',
+                            isCorrectPath: false,
+                            children: [],
+                            parent: some,
+                            level: childLevel,
+                            reqValue: randomInt(0, childLevel + 1),
+                            score: null
+                        };
+                        some.children.push(res);
+                        allNodes.push(res);
+                        resultLeaves.push(res);
+                    }
+                }
+                let deepResults = resultLeaves.filter(n => (n.level || 0) >= minCorrectDepth);
+                if (deepResults.length === 0 && resultLeaves.length > 0) {
+                    let deepest = resultLeaves.reduce((a, b) => ((a.level || 0) > (b.level || 0) ? a : b));
+                    let safetyCount = 0;
+                    while ((deepest.level || 0) < minCorrectDepth && safetyCount < 20) {
+                        safetyCount++;
+                        const childLevel = (deepest.level || 0) + 1;
+                        const newChild = {
+                            id: newId(),
+                            name: newId(),
+                            type: 'result',
+                            isCorrectPath: false,
+                            children: [],
+                            parent: deepest,
+                            level: childLevel,
+                            reqValue: randomInt(0, childLevel + 1),
+                            score: null
+                        };
+                        deepest.children.push(newChild);
+                        allNodes.push(newChild);
+                        deepest = newChild;
+                        resultLeaves.push(newChild);
+                    }
+                    deepResults = [deepest];
+                }
+                if (deepResults.length === 0) {
+                    deepResults = resultLeaves.length > 0 ? [resultLeaves[resultLeaves.length - 1]] : [allNodes[allNodes
+                        .length - 1]];
+                    if (deepResults[0] && deepResults[0].type !== 'result') {
+                        deepResults[0].type = 'result';
+                        deepResults[0].score = 100;
+                    }
+                }
+                const correctResult = deepResults[randomInt(0, deepResults.length - 1)];
+                resultLeaves.forEach(rn => {
+                    if (rn === correctResult) {
+                        rn.score = 100;
+                    } else {
+                        const lca = findLCA(rn, correctResult);
+                        const distance = (rn.level || 0) + (correctResult.level || 0) - 2 * (lca ? (lca.level || 0) :
+                            0);
+                        const randomScore = Math.floor(Math.random() * 100 / 5) * 5;
+                        rn.score = Math.min(randomScore, Math.floor(85 - Math.sqrt(Math.max(0, distance)) * 12));
+                        rn.score = Math.max(5, rn.score || 5);
+                    }
+                });
+                let cur = correctResult;
+                while (cur) {
+                    cur.isCorrectPath = true;
+                    cur = cur.parent;
+                }
+                const nodeDefs = allNodes.map(n => ({
+                    id: n.id,
+                    name: n.name,
+                    type: n.type,
+                    isCorrectPath: n.isCorrectPath,
+                    childIds: (n.children || []).map(c => c.id),
+                    reqValue: n.reqValue,
+                    score: n.score,
+                    level: n.level
+                }));
+                const skillCandidates = resultLeaves.filter(n => n !== correctResult && (n.score || 0) >= 30);
+                if (skillCandidates.length > 0) {
+                    const skillNode = skillCandidates[randomInt(0, skillCandidates.length - 1)];
+                    skillNode.type = 'skill';
+                    skillNode.name = '💎' + skillNode.name;
+                    const defEntry = nodeDefs.find(d => d.id === skillNode.id);
+                    if (defEntry) {
+                        defEntry.type = 'skill';
+                        defEntry.name = '💎' + defEntry.name.replace('💎', '');
+                    }
+                }
+                return { nodeDefs, correctResultId: correctResult.id };
+            }
+
+            function findLCA(a, b) {
+                const path = new Set();
+                let cur = a;
+                while (cur) {
+                    path.add(cur);
+                    cur = cur.parent;
+                }
+                cur = b;
+                while (cur) {
+                    if (path.has(cur)) return cur;
+                    cur = cur.parent;
+                }
+                return null;
+            }
+
+            function buildMapFromDefs(data) {
+                const { nodeDefs, correctResultId } = data;
+                const nodeMap = {};
+                nodeDefs.forEach(d => nodeMap[d.id] = {
+                    ...d,
+                    children: [],
+                    parent: null,
+                    state: 'hidden',
+                    x: 0,
+                    y: 0,
+                    isFork: false,
+                    _bounds: null,
+                    _checkBounds: null
+                });
+                Object.values(nodeMap).forEach(n => {
+                    (n.childIds || []).forEach(cid => {
+                        const c = nodeMap[cid];
+                        if (c) {
+                            n.children.push(c);
+                            c.parent = n;
+                        }
+                    });
+                    if (n.type === 'process' && n.children.length > 1) n.isFork = true;
+                });
+                const root = nodeMap['R'];
+                if (root) {
+                    Object.values(nodeMap).forEach(n => n.state = 'hidden');
+                    root.state = 'visible_locked';
+                }
+                computeLayoutFromNodeMap(nodeMap, root);
+                return {
+                    nodeMap,
+                    root,
+                    correctResult: nodeMap[correctResultId] || null,
+                    totalUnlocked: 0,
+                    gameOver: false,
+                    gameResult: null,
+                    maxResultScore: 0,
+                    hasSkillNode: !!Object.values(nodeMap).find(n => n.type === 'skill'),
+                    skillNodeId: (Object.values(nodeMap).find(n => n.type === 'skill') || {}).id || null,
+                    totalStaminaSpent: 0
+                };
+            }
+
+            function computeLayoutFromNodeMap(nodeMap, root) {
+                if (!root || !nodeMap) return;
+                const levels = {};
+                const nodeLevel = {};
+
+                function assignLevel(n, lv) {
+                    if (!n) return;
+                    nodeLevel[n.id] = lv;
+                    n.level = lv;
+                    if (!levels[lv]) levels[lv] = [];
+                    levels[lv].push(n);
+                    if (n.children) {
+                        n.children.forEach(c => assignLevel(c, lv + 1));
+                    }
+                }
+                assignLevel(root, 0);
+                const levelKeys = Object.keys(levels).map(Number);
+                const maxLevel = levelKeys.length > 0 ? Math.max(...levelKeys) : 0;
+                const levelHeight = LOGICAL_HEIGHT / (maxLevel + 2);
+                const topMargin = levelHeight * 0.9;
+
+                function leafCount(n) {
+                    if (!n) return 0;
+                    if (!n.children || n.children.length === 0) return 1;
+                    return n.children.reduce((s, c) => s + leafCount(c), 0);
+                }
+                const leafCounts = {};
+                Object.values(nodeMap).forEach(n => { leafCounts[n.id] = leafCount(n); });
+                const totalLeaves = leafCounts[root.id] || 1;
+                const margin = 60;
+
+                function assignX(n, left, right) {
+                    if (!n) return;
+                    const lc = leafCounts[n.id] || 1;
+                    const w = (right - left) * (lc / totalLeaves);
+                    n.x = n === root ? LOGICAL_WIDTH / 2 : left + w / 2;
+                    n.y = topMargin + (nodeLevel[n.id] || 0) * levelHeight;
+                    let childLeft = left;
+                    if (n.children) {
+                        n.children.forEach(c => {
+                            const cw = (right - left) * ((leafCounts[c.id] || 1) / totalLeaves);
+                            assignX(c, childLeft, childLeft + cw);
+                            childLeft += cw;
+                        });
+                    }
+                }
+                assignX(root, margin, LOGICAL_WIDTH - margin);
+                Object.values(levels).forEach(levelNodes => {
+                    if (!levelNodes || levelNodes.length === 0) return;
+                    levelNodes.sort((a, b) => (a.x || 0) - (b.x || 0));
+                    for (let i = 1; i < levelNodes.length; i++) {
+                        if ((levelNodes[i].x || 0) - (levelNodes[i - 1].x || 0) < 70) levelNodes[i].x = (levelNodes[
+                            i - 1].x || 0) + 70;
+                    }
+                    const avg = levelNodes.reduce((s, n) => s + (n.x || 0), 0) / levelNodes.length;
+                    levelNodes.forEach(n => n.x = (n.x || 0) + LOGICAL_WIDTH / 2 - avg);
+                    levelNodes.forEach(n => n.x = Math.max(margin, Math.min(LOGICAL_WIDTH - margin, n.x || 0)));
+                });
+            }
+
+            function updateMapSelectorButtons() {
+                const selector = document.getElementById('mapSelector');
+                if (!selector) return;
+                selector.innerHTML = '';
+                for (let i = 0; i < maps.length; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'map-btn';
+                    btn.dataset.index = i;
+                    btn.textContent = '⏳ 地图' + (i + 1);
+                    selector.appendChild(btn);
+                }
+                updateMapButtons();
+            }
+
+            function resetAndStartTutorial() {
+                settlementInProgress = false;
+                gameStarted = true;
+                tutorialActive = true;
+                tutorialPhase = 'map';
+                tutorialStep = 1;
+                tutorialPlayerChoseA = null;
+                tutorialStep5Triggered = false;
+                tutorialDigStructRevealed = false;
+                tutorialDigOtherStructRevealed = {};
+                globalMind = INITIAL_MIND;
+                skillPoints = 0;
+                timeBonusPerMap = 0;
+                rareNodeBonus = 0;
+                rewardMultiplier = 1;
+                failSafeAvailable = false;
+                failSafeUsed = false;
+                inspireStructuresRevealed = 0;
+                totalHistoricalScore = 0;
+                globalRemainingTime = 20;
+                globalMaxStaminaActual = 30;
+                globalRemainingStamina = 30;
+                activeMapIndex = 0;
+                maps = [createTutorialMap()];
+                updateMapSelectorButtons();
+                gameOverOverlay.classList.add('hidden');
+                skillUpgradeOverlay.classList.add('hidden');
+                const modalContinueBtn = document.getElementById('btnModalContinue');
+                if (modalContinueBtn) modalContinueBtn.classList.add('hidden');
+                const badge = document.getElementById('tutorialBadge');
+                if (badge) {
+                    badge.textContent = '🎓 学习中';
+                    badge.style.background = '#ff9800';
+                    badge.style.display = 'inline-block';
+                }
+                const levelNameEl = document.getElementById('levelName');
+                if (levelNameEl) levelNameEl.textContent = '教程';
+                const levelBanner = document.getElementById('levelBanner');
+                if (levelBanner) levelBanner.classList.remove('sim');
+                const staminaDisplayEl = document.getElementById('staminaDisplay');
+                const staminaRefEl = document.getElementById('staminaRef');
+                const timeNumberEl = document.getElementById('timeNumber');
+                if (staminaDisplayEl) staminaDisplayEl.textContent = globalRemainingStamina;
+                if (staminaRefEl) staminaRefEl.textContent = globalMaxStaminaActual;
+                if (timeNumberEl) timeNumberEl.textContent = globalRemainingTime;
+                updateTutorialGuide(1, '欢迎来到树形探索推理教程！首先请点击🔵根节点 R 来解锁它。根节点是探索的起点。',
+                    '💡 点击下方树形图中的圆形节点R。');
+                setGlobalMessage('🎓 教程开始！请点击根节点R解锁。', 'info');
+                updateActiveSkillsBar();
+                updateMindDisplay();
+                updateScoreProgress();
+                refreshUIForActiveMap();
+            }
+
+            updateActiveSkillsBar();
+            updateMindDisplay();
+            updateScoreProgress();
+            const staminaDisplayEl2 = document.getElementById('staminaDisplay');
+            const staminaRefEl2 = document.getElementById('staminaRef');
+            const timeNumberEl2 = document.getElementById('timeNumber');
+            if (staminaDisplayEl2) staminaDisplayEl2.textContent = '30';
+            if (staminaRefEl2) staminaRefEl2.textContent = '30';
+            if (timeNumberEl2) timeNumberEl2.textContent = '20';
+            updateTutorialGuide(null);
+            const badgeEl = document.getElementById('tutorialBadge');
+            if (badgeEl) badgeEl.style.display = 'none';
+            gameStarted = false;
+            maps = [];
+            updateMapSelectorButtons();
+            setTimeout(() => {
+                resetAndStartTutorial();
+            }, 300);
+        })();
+    </script>
+</body>
+</html>
+
+修改：
+请在模拟练习中移除提示框。
+
+给出重做之后的完整文件，不要省略。
